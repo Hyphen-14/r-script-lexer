@@ -1,0 +1,39 @@
+# Python byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PLY generated parser/lexer tables
+parsetab.py
+parser.out
+lextab.py
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Environment variables
+.env
+.env.local
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build & distribution
+build/
+dist/
+*.egg-info/
+
+# Local lecture / assignment PDFs
+CompTechGroupAssignment-Project1-2026.pdf
+HandsOn_Build_Lexer_Joh_2026.pdf
