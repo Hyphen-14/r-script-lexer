@@ -1,53 +1,5 @@
-"""
-=============================================================================
-Compilation Technique (Class LD07) - Group Assignment Project 1
-Lexical Analyzer Development using Python PLY
-
-Group : Group 2 — R-Like Scripting
-Case  : 3. Simple Conditional IF with Block (Slide 19)
-PIC   : 2802431395 - Samuel Tristan Ryansyah
-
-Members:
-  1. 2802438754 - Nathasa Bintang Kayesa
-  2. 2802495051 - Yasin Taryaqil Aghyar
-  3. 2802521932 - Athallah Rafif Rijal Belvana
-  4. 2802431395 - Samuel Tristan Ryansyah
-  5. 2802515261 - Early Achiril Putra
-=============================================================================
-
-PETUNJUK PENGERJAAN (KASUS 3 — SIMPLE CONDITIONAL IF WITH BLOCK):
------------------------------------------------------------------
-Target Input Source Code (Slide 19 / sample_inputs/case3_input.R):
-    #R version 3.4.4 
-    num1 <- 10
-    num2 <- 20
-    if (num1>num2) {
-    bignum <- num1;
-    cat("Big Number is ", bignum, "\\n")
-    } else {
-    bignum <- num2;
-    cat("Big Number is ", bignum, "\\n")
-    }
-
-Yang perlu diimplementasikan menggunakan `ply.lex`:
-1. Definisikan `reserved` untuk keyword kondisional & output:
-   - "if" -> "IF", "else" -> "ELSE", "cat" -> "CAT", "print" -> "PRINT".
-2. Definisikan `tokens`:
-   - ID, NUMBER, STRING, ASSIGN (`<-`)
-   - Operator aritmatika: PLUS, MINUS, TIMES, DIVIDE
-   - Operator relasional: LE (`<=`), GE (`>=`), EQ (`==`), NE (`!=`), LT (`<`), GT (`>`)
-   - Delimiter blok & statement: LPAREN, RPAREN, LBRACE (`{`), RBRACE (`}`), COMMA, SEMICOLON (`;`)
-   - Nilai dari `reserved`.
-   *Tips: Pastikan operator multi-karakter (`<=`, `>=`, `==`, `!=`, `<-`) terdeteksi dengan benar.*
-3. Buat aturan `t_COMMENT(t)` (`r"\\#[^\\n]*"`) agar baris komentar `#R version 3.4.4`
-   diabaikan dan tidak menghasilkan error.
-4. Lengkapi `t_STRING`, `t_NUMBER`, `t_ID`, `t_newline`, `t_ignore`, dan `t_error`.
-5. Jalankan lexer terhadap `DEFAULT_SOURCE` dan cetak tabel token lengkap.
-
-Referensi aturan token lengkap dapat dilihat di `src/r_lexer.py` dan `README.md`.
-=============================================================================
-"""
-
+# Case 3: Conditional IF Block
+# Group 2 - LD07
 
 import argparse
 import sys
@@ -67,12 +19,7 @@ cat("Big Number is ", bignum, "\\n")
 }
 """
 
-
-# ---------------------------------------------------------------------------
-# 1. Reserved words (keyword & fungsi output bawaan)
-#    Dicocokkan lewat t_ID: kata yang ada di dictionary ini diubah tipenya
-#    dari ID menjadi token keyword.
-# ---------------------------------------------------------------------------
+# Reserved keywords
 reserved = {
     "if": "IF",
     "else": "ELSE",
@@ -80,43 +27,31 @@ reserved = {
     "print": "PRINT",
 }
 
-# ---------------------------------------------------------------------------
-# 2. Daftar token
-# ---------------------------------------------------------------------------
+# Token list
 tokens = [
-    # Literal & identifier
     "ID",
     "NUMBER",
     "STRING",
-    # Assignment
     "ASSIGN",
-    # Operator aritmatika
     "PLUS",
     "MINUS",
     "TIMES",
     "DIVIDE",
-    # Operator relasional
     "LE",
     "GE",
     "EQ",
     "NE",
     "LT",
     "GT",
-    # Delimiter blok & statement
     "LPAREN",
     "RPAREN",
     "LBRACE",
     "RBRACE",
     "COMMA",
     "SEMICOLON",
-] + list(dict.fromkeys(reserved.values()))  # IF, ELSE, CAT, PRINT (tanpa duplikat)
+] + list(dict.fromkeys(reserved.values()))
 
-# ---------------------------------------------------------------------------
-# 3. Aturan token berbentuk string
-#    PLY mengurutkan aturan string dari regex TERPANJANG ke terpendek, sehingga
-#    operator dua karakter (<-, <=, >=, ==, !=) selalu dicoba lebih dulu
-#    daripada operator satu karakter (<, >). Inilah prinsip "longest match".
-# ---------------------------------------------------------------------------
+# Operator and delimiter rules
 t_ASSIGN = r"<-"
 t_LE = r"<="
 t_GE = r">="
@@ -137,26 +72,18 @@ t_RBRACE = r"\}"
 t_COMMA = r","
 t_SEMICOLON = r";"
 
-# Karakter yang diabaikan (spasi, tab, carriage return dari file Windows)
+# Ignored whitespace
 t_ignore = " \t\r"
 
 
-# ---------------------------------------------------------------------------
-# 4. Aturan token berbentuk fungsi
-#    Aturan fungsi dicoba sesuai URUTAN penulisan, dan SEBELUM aturan string.
-#    Karena itu komentar harus ditulis paling awal supaya "3.4.4" di dalam
-#    "#R version 3.4.4" tidak sempat dibaca sebagai NUMBER.
-# ---------------------------------------------------------------------------
+# Complex token rules
 def t_COMMENT(t):
     r"\#[^\n]*"
-    # Komentar R diawali '#' sampai akhir baris. Tidak mengembalikan token.
     pass
 
 
 def t_STRING(t):
     r'["\u201c](?:\\.|[^"\\\u201d\n])*["\u201d]|[\'\u2018](?:\\.|[^\'\\\u2019\n])*[\'\u2019]'
-    # Mendukung "..." , '...' , dan smart quote “...”.
-    # "\\n" di dalam string tetap 2 karakter (backslash + n), bukan newline.
     t.value = t.value[1:-1]
     return t
 
@@ -169,7 +96,7 @@ def t_NUMBER(t):
 
 def t_ID(t):
     r"[a-zA-Z_][a-zA-Z0-9_.]*"
-    t.type = reserved.get(t.value, "ID")  # if/else/cat/print -> keyword
+    t.type = reserved.get(t.value, "ID")
     return t
 
 
@@ -178,8 +105,8 @@ def t_newline(t):
     t.lexer.lineno += len(t.value)
 
 
+# Column and error handling
 def find_column(text, lexpos):
-    """Kolom 1-based dari awal baris saat ini."""
     last_newline = text.rfind("\n", 0, lexpos)
     if last_newline < 0:
         return lexpos + 1
@@ -189,12 +116,10 @@ def find_column(text, lexpos):
 def t_error(t):
     col = find_column(t.lexer.lexdata, t.lexpos)
     t.lexer.errors.append((t.lexer.lineno, col, t.value[0]))
-    t.lexer.skip(1)  # lewati karakter ilegal, lanjutkan pemindaian
+    t.lexer.skip(1)
 
 
-# ---------------------------------------------------------------------------
-# 5. Fungsi utama
-# ---------------------------------------------------------------------------
+# Lexer builder and runner
 def build_lexer():
     lexer = lex.lex(module=sys.modules[__name__])
     lexer.errors = []

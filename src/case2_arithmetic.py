@@ -1,37 +1,5 @@
-"""
-=============================================================================
-Compilation Technique (Class LD07) - Group Assignment Project 1
-Lexical Analyzer Development using Python PLY
-
-Group : Group 2 — R-Like Scripting
-Case  : 2. Simple Arithmetic Expression (Slide 18)
-PIC   : 2802521932 - Athallah Rafif Rijal Belvana
-
-Members:
-  1. 2802438754 - Nathasa Bintang Kayesa
-  2. 2802495051 - Yasin Taryaqil Aghyar
-  3. 2802521932 - Athallah Rafif Rijal Belvana
-  4. 2802431395 - Samuel Tristan Ryansyah
-  5. 2802515261 - Early Achiril Putra
-=============================================================================
-
-Target Input Source Code (Slide 18 / sample_inputs/case2_input.R):
-    num1 <- 10
-    num2 <- 20
-    num3 <- 30
-    sum <- num1+num2+num3
-    avg <- sum / 3
-    cat("num1 is ", num1, "\\n")
-    cat("num2 is ", num2, "\\n")
-    cat("num3 is ", num3, "\\n")
-    cat("Sum 3 numbers is ", sum, "\\n")
-    cat("Average is ", avg, "\\n")
-
-Cara menjalankan:
-    python src/case2_arithmetic.py                           # DEFAULT_SOURCE
-    python src/case2_arithmetic.py --file sample_inputs/case2_input.R
-=============================================================================
-"""
+# Case 2: Arithmetic Expression
+# Group 2 - LD07
 
 import argparse
 import sys
@@ -51,9 +19,7 @@ cat("Sum 3 numbers is ", sum, "\\n")
 cat("Average is ", avg, "\\n")
 """
 
-# ---------------------------------------------------------------------------
-# Definisi token
-# ---------------------------------------------------------------------------
+# Reserved keywords
 reserved = {
     "print": "PRINT",
     "cat": "CAT",
@@ -73,7 +39,7 @@ tokens = [
     "COMMA",
 ] + list(reserved.values())
 
-# Token sederhana (string regex)
+# Operator and delimiter rules
 t_ASSIGN = r"<-"
 t_PLUS = r"\+"
 t_MINUS = r"-"
@@ -83,16 +49,14 @@ t_LPAREN = r"\("
 t_RPAREN = r"\)"
 t_COMMA = r","
 
-# Karakter yang diabaikan (spasi, tab, carriage return)
+# Ignored whitespace
 t_ignore = " \t\r"
 
 
-# ---------------------------------------------------------------------------
-# Token berbasis fungsi
-# ---------------------------------------------------------------------------
+# Complex token rules
 def t_STRING(t):
     r'["“](?:\\.|[^"\\”\n])*["”]'
-    t.value = t.value[1:-1]  # buang tanda kutip pembuka & penutup
+    t.value = t.value[1:-1]
     return t
 
 
@@ -113,8 +77,8 @@ def t_newline(t):
     t.lexer.lineno += len(t.value)
 
 
+# Column and error handling
 def _column(data, lexpos):
-    """Kolom 1-based dari awal baris."""
     return lexpos - data.rfind("\n", 0, lexpos)
 
 
@@ -129,11 +93,8 @@ def t_error(t):
     t.lexer.skip(1)
 
 
-# ---------------------------------------------------------------------------
-# Fungsi utama
-# ---------------------------------------------------------------------------
+# Lexer runner and output
 def run_lexer(source):
-    """Tokenisasi `source`; kembalikan (daftar (token, kolom), daftar error)."""
     lexer = lex.lex()
     lexer.errors = []
     lexer.lineno = 1
@@ -148,7 +109,6 @@ def run_lexer(source):
 
 
 def print_token_table(source):
-    """Cetak tabel token; kembalikan (total token, total error)."""
     toks, errors = run_lexer(source)
     line = "=" * 70
     print(line)

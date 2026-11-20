@@ -1,14 +1,5 @@
-"""
-Core Lexical Analyzer for R-Like Scripting using Python PLY (ply.lex).
-
-Group 2 - Compilation Technique (Class LD07) - BINUS University
-Members:
-- 2802438754 - Nathasa Bintang Kayesa
-- 2802495051 - Yasin Taryaqil Aghyar
-- 2802521932 - Athallah Rafif Rijal Belvana
-- 2802431395 - Samuel Tristan Ryansyah
-- 2802515261 - Early Achiril Putra
-"""
+# Core R-Like Lexer (PLY)
+# Group 2 - LD07
 
 from __future__ import annotations
 
@@ -17,10 +8,9 @@ from dataclasses import dataclass
 import ply.lex as lex
 
 
+# Token and error records
 @dataclass(frozen=True)
 class TokenRecord:
-    """Represents a single lexical token emitted by the R-Like lexer."""
-
     line: int
     column: int
     token_type: str
@@ -30,14 +20,13 @@ class TokenRecord:
 
 @dataclass(frozen=True)
 class LexerErrorRecord:
-    """Represents an unrecognized character encountered during tokenization."""
-
     line: int
     column: int
     character: str
     lexpos: int
 
 
+# Reserved keywords
 reserved = {
     "print": "PRINT",
     "cat": "CAT",
@@ -55,25 +44,23 @@ reserved = {
     "NULL": "NULL",
 }
 
+# Token list
 tokens = [
     "ID",
     "NUMBER",
     "STRING",
-    # Assignment & Arithmetic Operators
     "ASSIGN",
     "MODULO",
     "PLUS",
     "MINUS",
     "TIMES",
     "DIVIDE",
-    # Relational Operators
     "LE",
     "GE",
     "EQ",
     "NE",
     "LT",
     "GT",
-    # Delimiters & Punctuation
     "LPAREN",
     "RPAREN",
     "LBRACE",
@@ -82,8 +69,7 @@ tokens = [
     "SEMICOLON",
 ] + sorted(set(reserved.values()))
 
-# Multi-character operators must precede single-character rules when ambiguous,
-# though PLY sorts string regexes by descending length.
+# Operator regex rules
 t_ASSIGN = r"<-"
 t_MODULO = r"%%"
 t_LE = r"<="
@@ -98,6 +84,7 @@ t_DIVIDE = r"/"
 t_LT = r"<"
 t_GT = r">"
 
+# Delimiter regex rules
 t_LPAREN = r"\("
 t_RPAREN = r"\)"
 t_LBRACE = r"\{"
@@ -105,18 +92,18 @@ t_RBRACE = r"\}"
 t_COMMA = r","
 t_SEMICOLON = r";"
 
+# Ignored whitespace
 t_ignore = " \t\r"
 
 
+# Complex token rules
 def t_COMMENT(t: lex.LexToken) -> None:
     r"\#[^\n]*"
-    # Comments in R begin with '#' and continue until the end of the line.
     return None
 
 
 def t_STRING(t: lex.LexToken) -> lex.LexToken:
     r'["\u201c](?:\\.|[^"\\\u201d\n])*["\u201d]|[\'\u2018](?:\\.|[^\'\\\u2019\n])*[\'\u2019]'
-    # Supports straight quotes ("...", '...') as well as smart quotes (“...") from slides.
     t.value = t.value[1:-1]
     return t
 
@@ -138,8 +125,8 @@ def t_newline(t: lex.LexToken) -> None:
     t.lexer.lineno += len(t.value)
 
 
+# Column and error handling
 def find_column(source_text: str, lexpos: int) -> int:
-    """Compute 1-based column offset from the start of the current line."""
     last_newline = source_text.rfind("\n", 0, lexpos)
     if last_newline < 0:
         return lexpos + 1
@@ -159,15 +146,14 @@ def t_error(t: lex.LexToken) -> None:
     t.lexer.skip(1)
 
 
+# Lexer builder and runner
 def build_lexer(**kwargs) -> lex.Lexer:
-    """Create a fresh PLY lexer instance with an isolated error buffer."""
     lexer = lex.lex(**kwargs)
     lexer.errors = []
     return lexer
 
 
 def tokenize_code(source_code: str) -> tuple[list[TokenRecord], list[LexerErrorRecord]]:
-    """Tokenize R-like source code and return both tokens and lexical errors."""
     lexer = build_lexer()
     lexer.input(source_code)
 
@@ -190,11 +176,11 @@ def tokenize_code(source_code: str) -> tuple[list[TokenRecord], list[LexerErrorR
     return token_records, list(lexer.errors)
 
 
+# Format token output
 def format_token_table(
     source_code: str,
     title: str = "R-Like Lexical Analysis Output",
 ) -> str:
-    """Return a clean tabular report of tokens and any lexical errors."""
     token_records, error_records = tokenize_code(source_code)
     counts = Counter(tok.token_type for tok in token_records)
 

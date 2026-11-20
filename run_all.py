@@ -1,16 +1,5 @@
-"""
-=============================================================================
-Compilation Technique (Class LD07) - Group Assignment Project 1
-Master CLI Runner for Group 2 — R-Like Scripting Lexical Analyzer
-
-PIC : 2802521932 - Athallah Rafif Rijal Belvana
-
-Penggunaan:
-    python run_all.py                                  # jalankan 4 kasus + ringkasan
-    python run_all.py --file sample_inputs/case2_input.R   # satu file .R tertentu
-    python run_all.py --quiet                          # hanya ringkasan
-=============================================================================
-"""
+# Master CLI Runner
+# Group 2 - LD07
 
 import argparse
 import sys
@@ -20,6 +9,7 @@ from src.r_lexer import format_token_table, tokenize_code
 
 BASE_DIR = Path(__file__).resolve().parent
 
+# Sample input paths
 SAMPLE_CASES = [
     ("Case 1 - Simple Statement", BASE_DIR / "sample_inputs" / "case1_input.R"),
     ("Case 2 - Simple Arithmetic Expression", BASE_DIR / "sample_inputs" / "case2_input.R"),
@@ -28,8 +18,8 @@ SAMPLE_CASES = [
 ]
 
 
+# Run single case
 def run_case(title, path, quiet=False):
-    """Jalankan lexer pada satu file; kembalikan (total token, total error)."""
     source = Path(path).read_text(encoding="utf-8")
     if not quiet:
         print(format_token_table(source, title=title))
@@ -38,6 +28,7 @@ def run_case(title, path, quiet=False):
     return len(tokens), len(errors)
 
 
+# Print summary table
 def print_summary(rows):
     line = "=" * 74
     print(line)

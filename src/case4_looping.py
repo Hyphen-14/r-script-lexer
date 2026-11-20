@@ -1,57 +1,10 @@
-"""
-=============================================================================
-Compilation Technique (Class LD07) - Group Assignment Project 1
-Lexical Analyzer Development using Python PLY
-
-Group : Group 2 — R-Like Scripting
-Case  : 4. Simple Looping with Conditional IF Block (Slide 20)
-PIC   : 2802515261 - Early Achiril Putra
-
-Members:
-  1. 2802438754 - Nathasa Bintang Kayesa
-  2. 2802495051 - Yasin Taryaqil Aghyar
-  3. 2802521932 - Athallah Rafif Rijal Belvana
-  4. 2802431395 - Samuel Tristan Ryansyah
-  5. 2802515261 - Early Achiril Putra
-=============================================================================
-
-PETUNJUK PENGERJAAN (KASUS 4 — SIMPLE LOOPING WITH CONDITIONAL IF BLOCK):
-------------------------------------------------------------------------
-Target Input Source Code (Slide 20 / sample_inputs/case4_input.R):
-    #R version 3.4.4 
-    cat("List of Odd Number 1-100: \\n")
-    num<-1
-    while (num <= 100) {
-    sisa <- (num %% 2) 
-    if (sisa != 0) {
-    oddnum <- num
-    cat(oddnum," ");
-    }
-    num <- num + 1 
-    }
-
-Yang perlu diimplementasikan menggunakan `ply.lex`:
-1. Definisikan `reserved`:
-   - "while" -> "WHILE", "if" -> "IF", "else" -> "ELSE", "cat" -> "CAT", "print" -> "PRINT".
-2. Definisikan `tokens`:
-   - ID, NUMBER, STRING, ASSIGN (`<-`), MODULO (`%%`)
-   - Operator aritmatika: PLUS, MINUS, TIMES, DIVIDE
-   - Operator relasional: LE (`<=`), GE (`>=`), EQ (`==`), NE (`!=`), LT (`<`), GT (`>`)
-   - Delimiter: LPAREN, RPAREN, LBRACE, RBRACE, COMMA, SEMICOLON
-   - Nilai dari `reserved`.
-3. Perhatikan token khusus di Kasus 4:
-   - `t_MODULO = r"%%"` untuk operasi modulo khas bahasa R (`num %% 2`).
-   - `t_LE = r"<="` untuk kondisi perulangan (`num <= 100`).
-   - `t_NE = r"!="` untuk kondisi ganjil (`sisa != 0`).
-4. Lengkapi `t_COMMENT`, `t_STRING`, `t_NUMBER`, `t_ID`, `t_newline`, `t_ignore`, dan `t_error`.
-5. Jalankan lexer terhadap `DEFAULT_SOURCE` dan cetak tabel token lengkap.
-
-Referensi aturan token lengkap dapat dilihat di `src/r_lexer.py` dan `README.md`.
-=============================================================================
-"""
+# Case 4: Looping With IF
+# Group 2 - LD07
 
 from __future__ import annotations
-import ply.lex as lex  # noqa: F401
+from collections import Counter
+from dataclasses import dataclass
+import ply.lex as lex
 
 DEFAULT_SOURCE = """#R version 3.4.4 
 cat("List of Odd Number 1-100: \\n")
@@ -66,16 +19,10 @@ num <- num + 1
 }
 """
 
-# TODO (Early): Lengkapi definisi `reserved`, `tokens`, aturan `t_*`,
-# serta fungsi utama untuk menjalankan lexer pada `DEFAULT_SOURCE`.
 
-from collections import Counter
-from dataclasses import dataclass
-
+# Token and error records
 @dataclass(frozen=True)
 class TokenRecord:
-    """Represents a single lexical token emitted by the R-Like lexer."""
-
     line: int
     column: int
     token_type: str
@@ -85,14 +32,13 @@ class TokenRecord:
 
 @dataclass(frozen=True)
 class LexerErrorRecord:
-    """Represents an unrecognized character encountered during tokenization."""
-
     line: int
     column: int
     character: str
     lexpos: int
 
 
+# Reserved keywords
 reserved = {
     "print": "PRINT",
     "cat": "CAT",
@@ -110,25 +56,23 @@ reserved = {
     "NULL": "NULL",
 }
 
+# Token list
 tokens = [
     "ID",
     "NUMBER",
     "STRING",
-    # Assignment & Arithmetic Operators
     "ASSIGN",
     "MODULO",
     "PLUS",
     "MINUS",
     "TIMES",
     "DIVIDE",
-    # Relational Operators
     "LE",
     "GE",
     "EQ",
     "NE",
     "LT",
     "GT",
-    # Delimiters & Punctuation
     "LPAREN",
     "RPAREN",
     "LBRACE",
@@ -137,8 +81,7 @@ tokens = [
     "SEMICOLON",
 ] + sorted(set(reserved.values()))
 
-# Multi-character operators must precede single-character rules when ambiguous,
-# though PLY sorts string regexes by descending length.
+# Operator and delimiter rules
 t_ASSIGN = r"<-"
 t_MODULO = r"%%"
 t_LE = r"<="
@@ -160,18 +103,18 @@ t_RBRACE = r"\}"
 t_COMMA = r","
 t_SEMICOLON = r";"
 
+# Ignored whitespace
 t_ignore = " \t\r"
 
 
+# Complex token rules
 def t_COMMENT(t: lex.LexToken) -> None:
     r"\#[^\n]*"
-    # Comments in R begin with '#' and continue until the end of the line.
     return None
 
 
 def t_STRING(t: lex.LexToken) -> lex.LexToken:
     r'["\u201c](?:\\.|[^"\\\u201d\n])*["\u201d]|[\'\u2018](?:\\.|[^\'\\\u2019\n])*[\'\u2019]'
-    # Supports straight quotes ("...", '...') as well as smart quotes (“...") from slides.
     t.value = t.value[1:-1]
     return t
 
@@ -193,8 +136,8 @@ def t_newline(t: lex.LexToken) -> None:
     t.lexer.lineno += len(t.value)
 
 
+# Column and error handling
 def find_column(source_text: str, lexpos: int) -> int:
-    """Compute 1-based column offset from the start of the current line."""
     last_newline = source_text.rfind("\n", 0, lexpos)
     if last_newline < 0:
         return lexpos + 1
@@ -214,15 +157,14 @@ def t_error(t: lex.LexToken) -> None:
     t.lexer.skip(1)
 
 
+# Lexer builder and runner
 def build_lexer(**kwargs) -> lex.Lexer:
-    """Create a fresh PLY lexer instance with an isolated error buffer."""
     lexer = lex.lex(**kwargs)
     lexer.errors = []
     return lexer
 
 
 def tokenize_code(source_code: str) -> tuple[list[TokenRecord], list[LexerErrorRecord]]:
-    """Tokenize R-like source code and return both tokens and lexical errors."""
     lexer = build_lexer()
     lexer.input(source_code)
 
@@ -245,11 +187,11 @@ def tokenize_code(source_code: str) -> tuple[list[TokenRecord], list[LexerErrorR
     return token_records, list(lexer.errors)
 
 
+# Format token output
 def format_token_table(
     source_code: str,
     title: str = "R-Like Lexical Analysis Output",
 ) -> str:
-    """Return a clean tabular report of tokens and any lexical errors."""
     token_records, error_records = tokenize_code(source_code)
     counts = Counter(tok.token_type for tok in token_records)
 
